@@ -2,11 +2,11 @@
 
 [한국어 버전 (Korean Version)](README.ko.md)
 
-ICU is a simple yet powerful anonymous URL health monitoring service. Register a URL, and ICU will periodically check its status and response time, providing you with a real-time monitoring page.
+ICU is a simple yet powerful URL health monitoring service. Register a URL, and ICU will periodically check its status and response time, providing you with a real-time monitoring page. Authentication is required (Google SSO via Supabase Auth).
 
 ## ✨ Key Features
 
-- **Anonymous & Simple**: No sign-up required. Just enter a URL to start monitoring.
+- **Simple Sign-in (Google SSO)**: Sign in with Google via Supabase Auth and start monitoring.
 - **Periodic Health Checks**: Automatically checks your URL's status (UP/DOWN) and response time.
 - **Real-time Dashboard**: A unique, shareable page for each URL showing its current status, response time chart, and check history.
 - **Modern UI/UX**: Clean interface with both **Dark and Light mode** support.
@@ -38,14 +38,14 @@ ICU is a simple yet powerful anonymous URL health monitoring service. Register a
     ```bash
     cd backend
     ```
-2.  Create a `.env.development` file. You can copy `.env.production` as a template, but use your local development values. Fill it with your Supabase credentials.
+2.  Create a `.env.development` file. You can copy `.env.production` as a template, but use your local development values. Fill it with your Supabase credentials. Make sure you use a Service Role key on the backend (required for the scheduler to bypass RLS securely on the server side).
 
     **`.env.development` example:**
     ```env
     NODE_ENV=development
     SERVER_PORT=3000
     SUPABASE_URL=https://<your-project-id>.supabase.co
-    SUPABASE_ANON_KEY=<your-supabase-anon-key>
+    SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
     HEALTH_CHECK_TIMEOUT_MS=5000
     HEALTH_CHECK_INTERVAL_MS=60000
     ```
@@ -79,6 +79,10 @@ ICU is a simple yet powerful anonymous URL health monitoring service. Register a
     ```
     The frontend will be accessible at `http://localhost:5173` (or another port if 5173 is busy). The app will automatically proxy API requests to the backend.
 
+4.  Configure Supabase Auth (Google SSO):
+    - In your Supabase project, enable the Google provider under Authentication → Providers.
+    - Add your local redirect URLs (e.g., `http://localhost:5173`) under Authentication → URL Configuration as needed.
+
 ## 📁 Project Structure
 
 ```
@@ -97,6 +101,8 @@ ICU is a simple yet powerful anonymous URL health monitoring service. Register a
 
 ## 📝 API Endpoints
 
+- All endpoints require a valid `Authorization: Bearer <access_token>` header from Supabase Auth.
 - `POST /api/register-url`: Registers a new URL for monitoring.
-- `GET /api/monitor/:uniqueId`: Retrieves monitoring data for a specific URL.
-- `POST /api/update-notification-email`: Updates the notification email for a monitored URL.
+- `GET /api/monitor/:uniqueId`: Retrieves monitoring data for a specific URL (owned by the authenticated user).
+- `GET /api/notification-settings/:uniqueId`: Retrieves notification settings for a monitored URL.
+- `POST /api/update-notification-settings`: Updates notification settings (email or webhook) for a monitored URL.
