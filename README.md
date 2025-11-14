@@ -6,11 +6,15 @@ ICU is a simple yet powerful URL health monitoring service. Register a URL, and 
 
 ## ✨ Key Features
 
-- **Simple Sign-in (Google SSO)**: Sign in with Google via Supabase Auth and start monitoring.
-- **Periodic Health Checks**: Automatically checks your URL's status (UP/DOWN) and response time.
-- **Real-time Dashboard**: A unique, shareable page for each URL showing its current status, response time chart, and check history.
-- **Modern UI/UX**: Clean interface with both **Dark and Light mode** support.
-- **Email Notifications**: Set up email alerts to be notified when your service goes down (backend logic for sending emails is a future extension).
+- Simple Sign-in (Google SSO): Sign in with Google via Supabase Auth and start monitoring.
+- Periodic Health Checks: Automatically checks your URL's status (UP/DOWN) and response time.
+- Real-time Dashboard: A unique, shareable page for each URL showing its current status, response time chart, and check history.
+- Modern UI/UX: Clean interface with both Dark and Light mode support.
+- Email/Webhook Notifications: Configure notifications; webhook delivery is supported. (Email sending code can be added later.)
+- URL registration validation: On first registration, ICU performs a real network check and rejects unreachable URLs with an English message: "Unable to connect to the specified URL. Please ensure the URL is up and running."
+- URL retention policy: For each URL, only the latest 10 health check results are kept to reduce DB load.
+- Auto-deactivate: If a URL stays DOWN for 3 consecutive checks, it will be automatically set to Inactive to save resources. Re-activating triggers an immediate check.
+- Per-account limit: You can register up to 5 URLs per account.
 
 ## 🛠️ Tech Stack
 
@@ -102,7 +106,18 @@ ICU is a simple yet powerful URL health monitoring service. Register a URL, and 
 ## 📝 API Endpoints
 
 - All endpoints require a valid `Authorization: Bearer <access_token>` header from Supabase Auth.
+- `GET /api/urls`: Returns the authenticated user's URL list including last status (`last_is_up`) and last checked time (`last_checked_at`).
 - `POST /api/register-url`: Registers a new URL for monitoring.
-- `GET /api/monitor/:uniqueId`: Retrieves monitoring data for a specific URL (owned by the authenticated user).
+  - Input: `{ url: string }`
+  - Validates URL format and performs an initial reachability check. Registration fails if the URL is unreachable.
+  - Per-account limit: max 5 URLs.
+- `DELETE /api/urls/:uniqueId`: Deletes the monitored URL and its health check history.
+- `PATCH /api/urls/:uniqueId/active`: Sets or toggles active status. When activating, performs an immediate health check.
+- `GET /api/monitor/:uniqueId`: Retrieves monitoring data for a specific URL (only the last 10 results are returned).
 - `GET /api/notification-settings/:uniqueId`: Retrieves notification settings for a monitored URL.
 - `POST /api/update-notification-settings`: Updates notification settings (email or webhook) for a monitored URL.
+
+Notes
+- Scheduler runs periodically on the server to check all active URLs.
+- After each insert, retention cleanup keeps only the latest 10 results per URL.
+- After 3 consecutive DOWN results, the URL is auto-deactivated.

@@ -2,9 +2,8 @@
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useTheme } from '@/composables/useTheme';
 import { useSupabaseClient } from '@/composables/useSupabaseClient';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import type { User } from '@supabase/supabase-js';
-import { Button } from '@/components/ui/button';
 
 const { theme, toggleTheme } = useTheme();
 const supabase = useSupabaseClient();
@@ -14,6 +13,14 @@ const route = useRoute();
 const user = ref<User | null>(null);
 
 const isLoginPage = computed(() => route.path === '/login');
+
+const navigateToHome = () => {
+  router.push('/');
+};
+
+const navigateToUrlList = () => {
+  router.push('/urls');
+};
 
 const handleAuthStateChange = (event: string, session: any) => {
   user.value = session?.user || null;
@@ -39,54 +46,82 @@ onMounted(async () => {
 
   supabase.auth.onAuthStateChange(handleAuthStateChange);
 });
-
-onUnmounted(() => {
-  // Clean up the subscription if necessary, though onAuthStateChange returns a subscription object
-  // For simplicity, we'll rely on Vue's component lifecycle for now.
-});
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans">
-    <header v-if="!isLoginPage" class="p-4 flex justify-between items-center">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-        ICU <span class="text-sm font-light">- I See You</span>
-      </h1>
-      <div class="flex items-center space-x-4">
-        <span v-if="user" class="text-sm text-gray-600 dark:text-gray-300">{{ user.email }}</span>
-        <Button v-if="user" @click="signOut" variant="outline" size="sm">Logout</Button>
-        <button
-          @click="toggleTheme"
-          class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          aria-label="Toggle theme"
-        >
-          <svg v-if="theme.value === 'light'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </button>
-      </div>
-    </header>
-    <main class="p-4">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 font-sans">
+    <!-- Layout: Left Menu + Main Content -->
+    <div v-if="!isLoginPage" class="flex" style="min-height: 100vh;">
+      <!-- Left Fixed Menu -->
+      <aside class="w-64 bg-transparent border-r border-gray-200 dark:border-gray-700 flex flex-col" style="position: fixed; height: 100vh; overflow-y: auto;">
+        <!-- ICU Logo -->
+        <div class="p-8 pt-10">
+          <button 
+            @click="navigateToHome"
+            class="text-5xl font-bold bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
+            style="margin-top: 10px; margin-bottom: 10px; color: #ffffff !important; transition: opacity 0.2s;"
+            @mouseover="$event.currentTarget.style.opacity = '0.8'"
+            @mouseleave="$event.currentTarget.style.opacity = '1'"
+          >
+            Home
+          </button>
+        </div>
+
+        <!-- Menu Items -->
+        <nav class="flex-1 px-6 space-y-2 mt-4">
+          <button
+            @click="navigateToUrlList"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
+            style="color: #ffffff !important; transition: opacity 0.2s;"
+            @mouseover="$event.currentTarget.style.opacity = '0.8'"
+            @mouseleave="$event.currentTarget.style.opacity = '1'"
+          >
+            <span class="font-medium" style="color: #ffffff !important;">URL</span>
+          </button>
+        </nav>
+
+        <!-- Logout Button -->
+        <div class="px-6 py-8 mb-4 mt-auto pb-10 ">
+          <button
+            @click="signOut"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
+            style="color: #ffffff !important; transition: opacity 0.2s; margin-bottom: 20px; margin-right: 10px;"
+            @mouseover="$event.currentTarget.style.opacity = '0.8'"
+            @mouseleave="$event.currentTarget.style.opacity = '1'"
+          >
+            <span class="font-medium" style="color: #ffffff !important;">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto flex flex-col" style="margin-left: 256px;">
+        <!-- Top Bar with User Email -->
+        <div class="bg-transparent border-b border-gray-200 dark:border-gray-700 px-8 py-5 flex justify-end items-center">
+          <p v-if="user" class="text-base text-gray-700 dark:text-gray-300 font-medium">
+            {{ user.email }}
+          </p>
+        </div>
+
+        <!-- Page Content -->
+        <div class="flex-1 p-8">
+          <RouterView />
+        </div>
+      </main>
+    </div>
+
+    <!-- Login Page (Full Screen) -->
+    <div v-else class="flex items-center justify-center min-h-screen">
       <RouterView />
-    </main>
-    <footer class="text-center p-4 text-xs text-gray-500">
-      <!-- Ad placeholder as requested -->
-      <!-- <div class="ad-banner">Your Ad Here</div> -->
-      <p>&copy; {{ new Date().getFullYear() }} ICU. All rights reserved.</p>
-    </footer>
+    </div>
   </div>
 </template>
 
 <style>
-/* For a smoother transition */
 .dark .bg-gray-100 {
-  background-color: #111827; /* dark:bg-gray-900 */
+  background-color: #111827;
 }
 .dark .bg-gray-200 {
-  background-color: #374151; /* dark:bg-gray-700 */
+  background-color: #374151;
 }
-/* Add other transition styles if needed */
 </style>

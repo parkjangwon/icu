@@ -28,6 +28,11 @@ const router = createRouter({
       path: '/auth/callback',
       name: 'auth-callback',
       component: AuthCallback
+    },
+    {
+      path: '/urls',
+      name: 'urls',
+      component: () => import('../views/UrlListView.vue')
     }
   ]
 })

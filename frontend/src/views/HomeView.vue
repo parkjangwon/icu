@@ -2,13 +2,13 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useSupabaseClient } from '@/composables/useSupabaseClient'; // Import useSupabaseClient
+import { useSupabaseClient } from '@/composables/useSupabaseClient';
 
 const router = useRouter();
-const supabase = useSupabaseClient(); // Get Supabase client instance
+const supabase = useSupabaseClient();
 const targetUrl = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
@@ -28,7 +28,7 @@ const registerUrl = async () => {
   resultUniqueId.value = '';
 
   if (!isValidUrl(targetUrl.value)) {
-    errorMessage.value = 'Please enter a valid URL (e.g., https://example.com)';
+    errorMessage.value = 'Please enter a valid URL';
     return;
   }
 
@@ -36,7 +36,7 @@ const registerUrl = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      errorMessage.value = 'You must be logged in to register a URL.';
+      errorMessage.value = 'You must be logged in';
       isLoading.value = false;
       router.push('/login');
       return;
@@ -49,70 +49,68 @@ const registerUrl = async () => {
         Authorization: `Bearer ${session.access_token}`,
       },
     });
-    
+
     if (response.data.unique_id) {
       resultUniqueId.value = response.data.unique_id;
-      // Navigate to the new page after a short delay
       setTimeout(() => {
         router.push(`/${resultUniqueId.value}`);
-      }, 1000);
+      }, 800);
     }
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.error || 'An unexpected error occurred. Please try again.';
+    errorMessage.value = error.response?.data?.error || 'An error occurred';
   } finally {
     isLoading.value = false;
   }
 };
-
-const getMonitorUrl = () => {
-  if (!resultUniqueId.value) return '';
-  return `${window.location.origin}/${resultUniqueId.value}`;
-};
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen">
-    <Card class="w-full max-w-2xl">
-      <CardHeader class="text-center">
-        <CardTitle class="text-2xl font-bold">Welcome to ICU</CardTitle>
-        <CardDescription>
-          I'll keep an eye on your website or API for you. Just give me a URL to watch.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form @submit.prevent="registerUrl">
-          <div class="flex flex-col sm:flex-row gap-2">
-            <Input
-              v-model="targetUrl"
-              id="url-input"
-              type="text"
-              placeholder="https://your-website.com"
-              :disabled="isLoading"
-            />
+  <div class="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
+    <div style="width: 400px; max-width: 100%;">
+      <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3">
+          ICU
+        </h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300">
+          Start monitoring your website
+        </p>
+      </div>
+
+      <Card class="shadow-xl">
+        <CardContent class="px-8 py-10">
+          <form @submit.prevent="registerUrl" class="space-y-6">
+            <div>
+              <Input
+                id="target-url"
+                v-model="targetUrl"
+                type="url"
+                placeholder="https://example.com"
+                :disabled="isLoading"
+                style="height: 44px; font-size: 15px;"
+              />
+            </div>
+
             <Button
               type="submit"
-              :disabled="isLoading"
+              :disabled="isLoading || !targetUrl"
+              class="w-full text-base font-semibold"
+              style="height: 44px;"
             >
-              <span v-if="!isLoading">Watch This URL</span>
-              <span v-else>Analyzing...</span>
+              {{ isLoading ? 'Setting up...' : 'Start Monitoring' }}
             </Button>
-          </div>
-        </form>
 
-        <!-- Error Message -->
-        <div v-if="errorMessage" class="mt-4 text-red-500">
-          {{ errorMessage }}
-        </div>
+            <!-- Error Message -->
+            <p v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400 text-center">
+              {{ errorMessage }}
+            </p>
 
-        <!-- Result Display -->
-        <div v-if="resultUniqueId" class="mt-6 p-4 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-700 rounded-lg">
-          <h3 class="font-bold text-green-800 dark:text-green-200">Success! Your monitoring page is ready.</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Redirecting you now...</p>
-          <a :href="getMonitorUrl()" target="_blank" class="mt-2 inline-block break-all text-blue-600 dark:text-blue-400 hover:underline">
-            {{ getMonitorUrl() }}
-          </a>
-        </div>
-      </CardContent>
-    </Card>
+            <!-- Success Message -->
+            <p v-if="resultUniqueId" class="text-sm text-green-600 dark:text-green-400 text-center">
+              ✓ Success! Redirecting...
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   </div>
 </template>
