@@ -1,40 +1,46 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100">
-    <Card class="w-[350px]">
-      <CardHeader>
-        <CardTitle class="text-center">Welcome to ICU</CardTitle>
-        <CardDescription class="text-center">Sign in to monitor your URLs</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="grid w-full items-center gap-4">
-          <Button @click="signInWithGoogle" class="w-full">
-            <img src="/google-icon.svg" alt="Google icon" class="w-5 h-5 mr-2" />
-            Sign in with Google
-          </Button>
-        </div>
-      </CardContent>
-      <CardFooter class="flex justify-between">
-        <!-- Optional: Add links for privacy policy, terms of service, etc. -->
-      </CardFooter>
-    </Card>
+  <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div class="w-[420px]">
+      <Card class="shadow-xl border-0">
+        <CardHeader class="space-y-3 pt-10 pb-6 px-8">
+          <div class="text-center">
+            <CardTitle class="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              ICU
+            </CardTitle>
+            <CardDescription class="text-base text-gray-600 dark:text-gray-300">
+              Monitor your website
+            </CardDescription>
+          </div>
+        </CardHeader>
+
+        <CardContent class="px-8 pb-10">
+          <button
+            @click="signInWithGoogle"
+            class="google-signin-button"
+          >
+            <img src="/google-icon.svg" alt="Google" class="w-[18px] h-[18px]" />
+            <span>Sign in with Google</span>
+          </button>
+        </CardContent>
+      </Card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useSupabaseClient } from '../composables/useSupabaseClient'; // Custom composable for Supabase client
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSupabaseClient } from '../composables/useSupabaseClient';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const router = useRouter();
-const supabase = useSupabaseClient(); // Use the composable
+const supabase = useSupabaseClient();
 
 const signInWithGoogle = async () => {
   try {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/auth/callback', // Redirect to a callback page
+        redirectTo: window.location.origin + '/auth/callback',
       },
     });
 
@@ -50,5 +56,51 @@ const signInWithGoogle = async () => {
 </script>
 
 <style scoped>
-/* Add any specific styles for the login page here */
+.google-signin-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 48px;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  color: #3c4043;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.1);
+}
+
+.google-signin-button:hover {
+  background-color: #f8f9fa;
+  border-color: #d2d4d6;
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.15);
+}
+
+.google-signin-button:active {
+  background-color: #f1f3f4;
+  border-color: #dadce0;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.1);
+}
+
+.google-signin-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+}
+
+/* Dark mode support */
+.dark .google-signin-button {
+  background-color: #ffffff;
+  border-color: #dadce0;
+  color: #3c4043;
+}
+
+.dark .google-signin-button:hover {
+  background-color: #f8f9fa;
+}
 </style>

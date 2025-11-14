@@ -51,9 +51,12 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* Tailwind v4: replace removed utility with explicit CSS using design tokens */
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    /* Tailwind v4: replace removed utilities with explicit CSS using design tokens */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }

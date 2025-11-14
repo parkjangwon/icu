@@ -1,18 +1,15 @@
+/// <reference path="./types/express.d.ts" />
+
 // This must be the first import to ensure environment variables are loaded
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import { supabase } from './supabaseClient';
+import { supabase, supabaseServiceRole } from './supabaseClient';
 import { nanoid } from 'nanoid';
 import { performHealthCheck } from './utils/healthChecker';
 import axios from 'axios';
-import { User } from '@supabase/supabase-js';
-
-// Extend the Request type to include a user property
-interface AuthenticatedRequest extends Request {
-    user?: User;
-}
+import config from './config';
 
 const app = express();
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -38,7 +35,7 @@ app.use(limiter);
 // --- End Security Middlewares ---
 
 // Authentication Middleware
-const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const authenticate = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -86,7 +83,7 @@ const isValidUrl = (url: string): boolean => {
 // --- API Endpoints ---
 
 // 4.B. URL 등록 API (POST /api/register-url)
-app.post('/api/register-url', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+app.post('/api/register-url', authenticate, async (req: Request, res: Response) => {
     const { url } = req.body;
     const userId = req.user?.id; // Get user ID from authenticated request
 
@@ -126,7 +123,7 @@ app.post('/api/register-url', authenticate, async (req: AuthenticatedRequest, re
 });
 
 // 4.D. 모니터링 데이터 조회 API (GET /api/monitor/:uniqueId)
-app.get('/api/monitor/:uniqueId', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+app.get('/api/monitor/:uniqueId', authenticate, async (req: Request, res: Response) => {
     const { uniqueId } = req.params;
     const userId = req.user?.id;
 
@@ -176,7 +173,7 @@ app.get('/api/monitor/:uniqueId', authenticate, async (req: AuthenticatedRequest
 });
 
 // Get notification settings
-app.get('/api/notification-settings/:uniqueId', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+app.get('/api/notification-settings/:uniqueId', authenticate, async (req: Request, res: Response) => {
     const { uniqueId } = req.params;
     const userId = req.user?.id;
 
@@ -215,7 +212,7 @@ app.get('/api/notification-settings/:uniqueId', authenticate, async (req: Authen
 
 
 // Update notification settings
-app.post('/api/update-notification-settings', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+app.post('/api/update-notification-settings', authenticate, async (req: Request, res: Response) => {
     const { uniqueId, notificationType, email, webhookUrl, webhookMethod, webhookHeaders } = req.body;
     const userId = req.user?.id;
 
