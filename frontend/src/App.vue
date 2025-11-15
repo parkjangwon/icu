@@ -35,19 +35,19 @@ const handleAuthStateChange = (event: string, session: any) => {
 
 const signOut = async () => {
   try {
-    // 네트워크 호출 없이 순수 로컬 세션 데이터만 정리 (환경별 403 방지)
+    // Clear local session data without making a network call to prevent 403 errors in some environments.
     try {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (!k) continue;
-        // Supabase JS가 사용하는 키들은 sb- 접두사를 가집니다.
+        // Keys used by Supabase JS have an 'sb-' prefix.
         if (k.startsWith('sb-')) keysToRemove.push(k);
       }
       keysToRemove.forEach(k => localStorage.removeItem(k));
     } catch {}
 
-    // 라우팅
+    // Routing
     await router.push('/login');
   } catch {
     await router.push('/login');

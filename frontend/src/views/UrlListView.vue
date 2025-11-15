@@ -66,7 +66,7 @@ const deleteUrl = async (uniqueId: string) => {
     }
 
     // Optional confirm dialog
-    if (!confirm('정말로 이 URL과 관련된 모든 히스토리 데이터를 삭제하시겠습니까?')) {
+    if (!confirm('Are you sure you want to delete this URL and all its history data?')) {
       return;
     }
 
@@ -74,11 +74,11 @@ const deleteUrl = async (uniqueId: string) => {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
 
-    // Remove from local list without full refetch
-    urls.value = urls.value.filter(u => u.unique_id !== uniqueId);
+    // Refetch the list to show the change immediately
+    await fetchUrls();
   } catch (err: any) {
     console.error('Failed to delete URL:', err);
-    alert(err.response?.data?.error || '삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    alert(err.response?.data?.error || 'Failed to delete. Please try again later.');
   }
 };
 
@@ -101,7 +101,7 @@ const toggleActive = async (item: MonitoredUrl, e?: Event) => {
     item.is_active = data?.is_active ?? next;
   } catch (err: any) {
     console.error('Failed to toggle status:', err);
-    alert(err.response?.data?.error || '상태 변경에 실패했습니다.');
+    alert(err.response?.data?.error || 'Failed to change status.');
   }
 };
 
@@ -136,10 +136,10 @@ onBeforeUnmount(() => {
 <template>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">
+      <h1 class="text-3xl font-bold tracking-tight text-black mb-2">
         Your Monitored URLs
       </h1>
-      <p class="text-base text-gray-600 dark:text-gray-400">
+      <p class="text-base text-gray-600">
         Manage and view all your monitoring URLs
       </p>
     </div>
@@ -147,23 +147,23 @@ onBeforeUnmount(() => {
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center items-center py-20">
       <div class="text-center">
-        <p class="text-gray-600 dark:text-gray-400 text-lg">Loading your URLs...</p>
+        <p class="text-gray-600 text-lg">Loading your URLs...</p>
       </div>
     </div>
 
     <!-- Error State -->
     <div v-else-if="errorMessage" class="text-center py-20">
-      <div class="text-red-600 dark:text-red-400 text-lg font-medium">
+      <div class="text-red-600 text-lg font-medium">
         {{ errorMessage }}
       </div>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="urls.length === 0" class="text-center py-20">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 class="text-xl font-semibold text-black mb-2">
         No URLs Yet
       </h3>
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+      <p class="text-sm text-gray-600 mb-6">
         Start monitoring your first URL to see it here
       </p>
       <button
@@ -175,36 +175,36 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- URL Table Grid -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-900">
+    <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
               URL
             </th>
-            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
               Status
             </th>
-            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
               Last
             </th>
-            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
               Added Date
             </th>
-            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody class="bg-white divide-y divide-gray-200">
           <tr
             v-for="url in urls"
             :key="url.id"
             @click="navigateToMonitor(url.unique_id)"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+            class="hover:bg-gray-50 cursor-pointer transition-colors"
           >
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
+              <div class="text-sm font-medium text-black">
                 {{ url.target_url }}
               </div>
             </td>
@@ -212,10 +212,10 @@ onBeforeUnmount(() => {
               <button
                 class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 :class="url.is_active
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-gray-500/30 text-white dark:bg-gray-700 text-white'"
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-500/30 text-white'"
                 @click.stop="(e) => toggleActive(url, e)"
-                title="클릭하여 상태 전환"
+                title="Click to toggle status"
               >
                 {{ url.is_active ? 'Active' : 'Inactive' }}
               </button>
@@ -224,38 +224,38 @@ onBeforeUnmount(() => {
               <div class="flex items-center gap-3">
                 <span
                   v-if="url.last_is_up === true"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                  title="마지막 체크 결과: UP"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  title="Last check: UP"
                 >
                   [UP]&nbsp;&nbsp;
                 </span>
                 <span
                   v-else-if="url.last_is_up === false"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                  title="마지막 체크 결과: DOWN"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                  title="Last check: DOWN"
                 >
                   [DOWN]&nbsp;&nbsp;
                 </span>
                 <span
                   v-else
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                  title="아직 체크 이력이 없습니다"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                  title="No check history yet"
                 >
                   —
                 </span>
-                <span v-if="url.last_checked_at" class="text-xs text-gray-500 dark:text-gray-400">
+                <span v-if="url.last_checked_at" class="text-xs text-gray-500">
                   {{ new Date(url.last_checked_at).toLocaleString() }}
                 </span>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
               {{ formatDate(url.created_at) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
               <button
                 @click.stop="deleteUrl(url.unique_id)"
                 class="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                title="URL 및 히스토리 삭제"
+                title="Delete URL and history"
               >
                 Delete
               </button>
