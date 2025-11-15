@@ -36,11 +36,23 @@ const handleAuthStateChange = (event: string, session: any) => {
 };
 
 const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.error('Error signing out:', error.message);
-  } else {
-    router.push('/login');
+  try {
+    // 네트워크 호출 없이 순수 로컬 세션 데이터만 정리 (환경별 403 방지)
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        // Supabase JS가 사용하는 키들은 sb- 접두사를 가집니다.
+        if (k.startsWith('sb-')) keysToRemove.push(k);
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch {}
+
+    // 라우팅
+    await router.push('/login');
+  } catch {
+    await router.push('/login');
   }
 };
 
@@ -88,7 +100,7 @@ onMounted(async () => {
         </nav>
 
         <!-- Logout Button -->
-        <div class="px-6 py-8 mb-4 mt-auto pb-10 ">
+        <div v-if="user" class="px-6 py-8 mb-4 mt-auto pb-10 ">
           <button
             @click="signOut"
             class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none transition-opacity hover:opacity-80"
