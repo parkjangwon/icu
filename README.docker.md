@@ -166,7 +166,7 @@ Terminate TLS at Cloudflare and keep the origin app on plain HTTP. Your server o
 1. Add an A record in Cloudflare DNS (orange cloud = proxied)
 2. SSL/TLS mode
    - Simple: Flexible (origin is HTTP: host 8080 → container 3000)
-   - Stricter: Full (Strict) requires TLS at the origin (via a host-level proxy or app TLS). The container itself does not include Nginx.
+   - Stricter: Full (Strict) requires TLS at the origin (via a host-level proxy or app TLS).
 3. Start with defaults for security settings; adjust bot/firewall rules as needed.
 
 Change origin port via `HOST_PORT` in `docker/.env.production`. Cloudflare listens on 80/443 and proxies to your origin port.

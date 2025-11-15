@@ -1,0 +1,47 @@
+networks:
+  icu_network:
+    driver: bridge
+
+services:
+  icu-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+      args:
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    image: icu-app:${IMAGE_TAG:-latest}
+    container_name: icu-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SERVER_PORT=3000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - HEALTH_CHECK_TIMEOUT_MS=${HEALTH_CHECK_TIMEOUT_MS:-5000}
+      - HEALTH_CHECK_INTERVAL_MS=${HEALTH_CHECK_INTERVAL_MS:-60000}
+      - TZ=${TZ:-Asia/Seoul}
+    volumes:
+      # 로그 볼륨 (백엔드만)
+      - ../logs/backend:/var/log/app/backend
+    networks:
+      - icu_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: icu-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      icu-app:
+        condition: service_healthy
+    networks:
+      - icu_network

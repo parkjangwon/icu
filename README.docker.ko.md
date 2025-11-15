@@ -166,7 +166,7 @@ TLS는 Cloudflare에서 종료하고, 원본 앱은 평문 HTTP로 둡니다. �
 1. Cloudflare DNS에 A 레코드 추가(주황색 구름=Proxied)
 2. SSL/TLS 모드
    - 간단: Flexible (원본은 HTTP: 호스트 8080 → 컨테이너 3000)
-   - 엄격: Full (Strict)는 원본 서버에서 TLS가 필요(호스트 레벨 프록시 또는 앱 TLS). 컨테이너에는 Nginx가 없습니다.
+   - 엄격: Full (Strict)는 원본 서버에서 TLS가 필요(호스트 레벨 프록시 또는 앱 TLS).
 3. 보안 설정은 기본값으로 시작 후, 봇/방화벽 규칙 등을 필요에 따라 조정
 
 원본 포트 변경은 `docker/.env.production`의 `HOST_PORT`로 합니다. Cloudflare는 80/443을 수신하고 지정한 원본 포트로 프록시합니다.
