@@ -14,10 +14,10 @@ const latestCheck = computed(() => {
 });
 
 const status = computed(() => {
-  if (!latestCheck.value) return { text: 'Unknown', color: 'gray' };
+  if (!latestCheck.value) return { text: 'Unknown' };
   return latestCheck.value.is_success
-    ? { text: 'UP', color: 'green' }
-    : { text: 'DOWN', color: 'red' };
+    ? { text: 'UP' }
+    : { text: 'DOWN' };
 });
 
 const lastChecked = computed(() => {
@@ -28,14 +28,8 @@ const lastChecked = computed(() => {
 </script>
 
 <template>
-  <Card 
-    :class="{
-      'bg-green-500': status.color === 'green',
-      'bg-red-500': status.color === 'red',
-      'bg-gray-500': status.color === 'gray',
-    }"
-  >
-    <CardContent class="p-6 text-center text-white">
+  <Card>
+    <CardContent class="p-6 text-center text-black">
       <p class="text-5xl font-bold">{{ status.text }}</p>
       <p class="mt-2 text-sm opacity-90">Last checked: {{ lastChecked }}</p>
     </CardContent>

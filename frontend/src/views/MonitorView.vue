@@ -46,10 +46,9 @@ onMounted(async () => {
   <div class="max-w-4xl mx-auto p-4">
     <div v-if="isLoading" class="text-center py-12">
       <p class="text-lg text-gray-500">Loading monitoring data...</p>
-      <!-- You can add a spinner here -->
     </div>
-    <div v-else-if="errorMessage" class="text-center p-6 bg-red-100 dark:bg-red-900/50 rounded-lg shadow-md">
-      <p class="text-red-600 dark:text-red-300 font-semibold">{{ errorMessage }}</p>
+    <div v-else-if="errorMessage" class="text-center p-6 bg-red-100 rounded-lg shadow-md">
+      <p class="text-red-600 font-semibold">{{ errorMessage }}</p>
       <router-link to="/" class="mt-4 inline-block text-blue-500 hover:underline">Go back home</router-link>
     </div>
     <div v-else-if="monitorData" class="space-y-8">

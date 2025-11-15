@@ -48,7 +48,7 @@ const formatTime = (time: string) => {
       </TableRow>
       <TableRow v-for="(check, index) in recentChecks" :key="index">
         <TableCell>
-          <Badge :variant="check.is_success ? 'default' : 'destructive'">
+          <Badge :class="check.is_success ? 'bg-black text-white' : 'bg-gray-400 text-white'">
             {{ check.is_success ? 'UP' : 'DOWN' }}
           </Badge>
         </TableCell>

@@ -45,8 +45,8 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Response Time (ms)',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: 'rgba(59, 130, 246, 1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        borderColor: 'rgba(0, 0, 0, 1)',
         data,
         fill: true,
         tension: 0.4,
