@@ -62,10 +62,8 @@ onMounted(async () => {
         <div class="p-8 pt-10">
           <button 
             @click="navigateToHome"
-            class="text-5xl font-bold bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
-            style="margin-top: 10px; margin-bottom: 10px; color: #ffffff !important; transition: opacity 0.2s;"
-            @mouseover="$event.currentTarget.style.opacity = '0.8'"
-            @mouseleave="$event.currentTarget.style.opacity = '1'"
+            class="text-5xl font-bold bg-transparent border-0 p-0 focus:outline-none focus:ring-0 transition-opacity hover:opacity-80"
+            style="margin-top: 10px; margin-bottom: 10px; color: #ffffff !important;"
           >
             Home
           </button>
@@ -75,19 +73,15 @@ onMounted(async () => {
         <nav class="flex-1 px-6 space-y-2 mt-4">
           <button
             @click="navigateToUrlList"
-            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
-            style="color: #ffffff !important; transition: opacity 0.2s;"
-            @mouseover="$event.currentTarget.style.opacity = '0.8'"
-            @mouseleave="$event.currentTarget.style.opacity = '1'"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none transition-opacity hover:opacity-80"
+            style="color: #ffffff !important;"
           >
             <span class="font-medium" style="color: #ffffff !important;">URL</span>
           </button>
           <button
             @click="navigateToNotifications"
-            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
-            style="margin-top: 10px; margin-bottom: 10px;  margin-right: 10px; color: #ffffff !important; transition: opacity 0.2s;"
-            @mouseover="$event.currentTarget.style.opacity = '0.8'"
-            @mouseleave="$event.currentTarget.style.opacity = '1'"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none transition-opacity hover:opacity-80"
+            style="margin-top: 10px; margin-bottom: 10px;  margin-right: 10px; color: #ffffff !important;"
           >
             <span class="font-medium" style="color: #ffffff !important;">Notification</span>
           </button>
@@ -97,10 +91,8 @@ onMounted(async () => {
         <div class="px-6 py-8 mb-4 mt-auto pb-10 ">
           <button
             @click="signOut"
-            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
-            style="color: #ffffff !important; transition: opacity 0.2s; margin-bottom: 20px;"
-            @mouseover="$event.currentTarget.style.opacity = '0.8'"
-            @mouseleave="$event.currentTarget.style.opacity = '1'"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none transition-opacity hover:opacity-80"
+            style="color: #ffffff !important; margin-bottom: 20px;"
           >
             <span class="font-medium" style="color: #ffffff !important;">Logout</span>
           </button>

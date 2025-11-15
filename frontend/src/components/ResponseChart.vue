@@ -11,6 +11,8 @@ import {
   Tooltip,
   Legend,
   TimeScale,
+  type ChartOptions,
+  type Scale,
 } from 'chart.js';
 import 'chart.js/auto'; // Using auto imports all the necessary components
 
@@ -53,14 +55,18 @@ const chartData = computed(() => {
   };
 });
 
-const chartOptions = computed(() => ({
+const chartOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
   maintainAspectRatio: false,
   scales: {
     y: {
+      type: 'linear',
       beginAtZero: true,
       ticks: {
-        callback: (value: number) => `${value} ms`,
+        callback(this: Scale, tickValue: number | string) {
+          const v = typeof tickValue === 'string' ? Number(tickValue) : tickValue;
+          return `${v} ms`;
+        },
       },
     },
   },

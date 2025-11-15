@@ -25,7 +25,39 @@ app.use(express.json()); // Middleware to parse JSON bodies
 app.use(cors()); 
 
 // Helmet for setting various security headers
-app.use(helmet());
+// Helmet security headers; in production, apply a CSP that allows calling Supabase
+if (config.nodeEnv === 'production') {
+    try {
+        const supabaseOrigin = new URL(config.supabaseUrl).origin; // e.g., https://xxx.supabase.co
+        const supabaseWsOrigin = supabaseOrigin.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+
+        app.use(helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    // Allow API/XHR/WebSocket calls to Supabase
+                    connectSrc: ["'self'", supabaseOrigin, supabaseWsOrigin],
+                    // Allow loading images from self/data/https (common for avatars, etc.)
+                    imgSrc: ["'self'", 'data:', 'https:'],
+                    // Vite build may inline some styles (Tailwind preflight); allow unsafe-inline styles
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    // Only load scripts from self (the built assets)
+                    scriptSrc: ["'self'"],
+                    objectSrc: ["'none'"],
+                    baseUri: ["'self'"],
+                    frameAncestors: ["'self'"],
+                },
+            },
+            // Some third-party libs might embed cross-origin resources; relax if needed
+            crossOriginEmbedderPolicy: false,
+        }));
+    } catch (e) {
+        console.warn('Failed to configure CSP; falling back to default helmet. Error:', (e as any)?.message || e);
+        app.use(helmet());
+    }
+} else {
+    app.use(helmet());
+}
 
 // Rate limiting to prevent abuse
 const limiter = rateLimit({
@@ -305,6 +337,23 @@ app.post('/api/register-url', authenticate, async (req: Request, res: Response) 
                 code: 'LIMIT_REACHED',
                 limit: 5,
             });
+        }
+
+        // Check for duplicate URL for the same user
+        const { data: existingUrl, error: existingUrlError } = await supabaseServiceRole
+            .from('monitored_urls')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('target_url', url)
+            .single();
+
+        if (existingUrlError && (existingUrlError as any).code !== 'PGRST116') { // 'PGRST116' means no rows found, which is good.
+            console.error('Supabase duplicate check error:', existingUrlError);
+            return res.status(500).json({ error: 'Could not verify URL duplication.' });
+        }
+
+        if (existingUrl) {
+            return res.status(409).json({ error: 'This URL is already registered by you.' });
         }
 
         // 1) Perform a one-time reachability check before insertion

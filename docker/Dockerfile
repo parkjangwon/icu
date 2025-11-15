@@ -3,6 +3,12 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
+# Provide Vite build-time environment variables
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+
 # Copy frontend package files
 COPY frontend/package*.json ./
 RUN npm ci

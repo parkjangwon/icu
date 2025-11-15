@@ -11,6 +11,7 @@
     "docker:prod:build": "bash docker/build.sh production build",
     "docker:prod:up": "bash docker/build.sh production up",
     "docker:prod:down": "bash docker/build.sh production down",
+    "docker:prod:logs": "bash docker/build.sh production logs",
 
     "docker:dev:build": "bash docker/build.sh development build",
     "docker:dev:up": "bash docker/build.sh development up",

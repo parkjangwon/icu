@@ -4,6 +4,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: ${BUILD_TARGET:-production}
+      args:
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     image: icu-app:${IMAGE_TAG:-latest}
     container_name: icu-app
     ports:
