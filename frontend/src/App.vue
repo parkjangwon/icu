@@ -3,6 +3,7 @@ import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useSupabaseClient } from '@/composables/useSupabaseClient';
 import { ref, onMounted, computed } from 'vue';
 import type { User } from '@supabase/supabase-js';
+import Footer from '@/components/Footer.vue';
 
 const supabase = useSupabaseClient();
 const router = useRouter();
@@ -75,6 +76,7 @@ onMounted(async () => {
           <div class="p-4 sm:p-6 lg:p-8">
             <RouterView />
           </div>
+          <Footer />
         </main>
       </div>
 
@@ -96,12 +98,16 @@ onMounted(async () => {
         <main class="flex-grow p-4">
           <RouterView />
         </main>
+        <Footer />
       </div>
     </div>
 
     <!-- Login Page (Full Screen) -->
-    <div v-else class="flex items-center justify-center min-h-screen">
-      <RouterView />
+    <div v-else class="flex flex-col min-h-screen">
+      <div class="flex-grow flex items-center justify-center">
+        <RouterView />
+      </div>
+      <Footer />
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,15 @@ const targetUrl = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const resultUniqueId = ref('');
+
+// 이스터 에그 🎁
+watch(targetUrl, (newValue) => {
+  const easterEggs = ['김희진', '희진', '호빵'];
+  if (easterEggs.includes(newValue.trim())) {
+    alert('I Love You 💕');
+    targetUrl.value = '';
+  }
+});
 
 const isValidUrl = (url: string): boolean => {
   try {
