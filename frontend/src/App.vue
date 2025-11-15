@@ -22,6 +22,10 @@ const navigateToUrlList = () => {
   router.push('/urls');
 };
 
+const navigateToNotifications = () => {
+  router.push('/notifications');
+};
+
 const handleAuthStateChange = (event: string, session: any) => {
   user.value = session?.user || null;
   if (!user.value && !isLoginPage.value) {
@@ -78,6 +82,15 @@ onMounted(async () => {
           >
             <span class="font-medium" style="color: #ffffff !important;">URL</span>
           </button>
+          <button
+            @click="navigateToNotifications"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
+            style="margin-top: 10px; margin-bottom: 10px;  margin-right: 10px; color: #ffffff !important; transition: opacity 0.2s;"
+            @mouseover="$event.currentTarget.style.opacity = '0.8'"
+            @mouseleave="$event.currentTarget.style.opacity = '1'"
+          >
+            <span class="font-medium" style="color: #ffffff !important;">Notification</span>
+          </button>
         </nav>
 
         <!-- Logout Button -->
@@ -85,7 +98,7 @@ onMounted(async () => {
           <button
             @click="signOut"
             class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm bg-transparent border-0 focus:outline-none"
-            style="color: #ffffff !important; transition: opacity 0.2s; margin-bottom: 20px; margin-right: 10px;"
+            style="color: #ffffff !important; transition: opacity 0.2s; margin-bottom: 20px;"
             @mouseover="$event.currentTarget.style.opacity = '0.8'"
             @mouseleave="$event.currentTarget.style.opacity = '1'"
           >

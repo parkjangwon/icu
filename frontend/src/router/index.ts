@@ -14,7 +14,13 @@ const router = createRouter({
       meta: { requiresAuth: true } // Protect this route
     },
     {
-      path: '/:uniqueId',
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('../views/NotificationSettingsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/monitor/:uniqueId',
       name: 'monitor',
       component: () => import('../views/MonitorView.vue'),
       meta: { requiresAuth: true } // Protect this route

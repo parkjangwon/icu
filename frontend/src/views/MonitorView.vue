@@ -7,7 +7,6 @@ import { useSupabaseClient } from '@/composables/useSupabaseClient';
 import StatusHeader from '@/components/StatusHeader.vue';
 import ResponseChart from '@/components/ResponseChart.vue';
 import HistoryTable from '@/components/HistoryTable.vue';
-import NotificationForm from '@/components/NotificationForm.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const route = useRoute();
@@ -78,16 +77,6 @@ onMounted(async () => {
           <HistoryTable :healthChecks="monitorData.health_checks" />
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Notifications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <NotificationForm :uniqueId="uniqueId" :initialEmail="monitorData.notification_email" :accessToken="accessToken" />
-        </CardContent>
-      </Card>
-
     </div>
   </div>
 </template>

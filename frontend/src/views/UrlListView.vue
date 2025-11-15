@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,8 +22,10 @@ const urls = ref<MonitoredUrl[]>([]);
 const isLoading = ref(true);
 const errorMessage = ref('');
 
-const fetchUrls = async () => {
-  isLoading.value = true;
+const fetchUrls = async (silent = false) => {
+  if (!silent) {
+    isLoading.value = true;
+  }
   errorMessage.value = '';
 
   try {
@@ -45,12 +47,14 @@ const fetchUrls = async () => {
     errorMessage.value = error.response?.data?.error || 'Failed to load URLs';
     console.error('Error fetching URLs:', error);
   } finally {
-    isLoading.value = false;
+    if (!silent) {
+      isLoading.value = false;
+    }
   }
 };
 
 const navigateToMonitor = (uniqueId: string) => {
-  router.push(`/${uniqueId}`);
+  router.push({ name: 'monitor', params: { uniqueId } });
 };
 
 const deleteUrl = async (uniqueId: string) => {
@@ -110,8 +114,22 @@ const formatDate = (dateString: string) => {
   });
 };
 
+let refreshTimer: number | undefined;
+
 onMounted(() => {
+  // Initial load
   fetchUrls();
+  // Auto-refresh every 10 seconds (silent to avoid UI flicker)
+  refreshTimer = window.setInterval(() => {
+    fetchUrls(true);
+  }, 10000);
+});
+
+onBeforeUnmount(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = undefined;
+  }
 });
 </script>
 
