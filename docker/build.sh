@@ -63,37 +63,44 @@ export $(grep -v '^#' "$ENV_FILE" | xargs)
 case $ACTION in
     build)
         print_info "Building Docker image for $ENV environment..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" build
+        docker compose $COMPOSE --env-file "$ENV_FILE" build
         print_info "Build completed successfully!"
         ;;
 
     up)
         print_info "Starting application in $ENV mode..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" up -d
+        docker compose $COMPOSE --env-file "$ENV_FILE" up -d
         print_info "Application started!"
-        print_info "Access the application at: http://localhost:${HOST_PORT:-8080}"
+        if [ "$ENV" = "development" ]; then
+            print_info "Development access points:"
+            print_info "  Frontend (Vite):   http://localhost:5173"
+            print_info "  API (Express):     http://localhost:3000"
+            print_info "  Health check:      http://localhost:3000/healthz"
+        else
+            print_info "Access the application at: http://localhost:${HOST_PORT:-8080}"
+        fi
         ;;
 
     down)
         print_info "Stopping application..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" down
+        docker compose $COMPOSE --env-file "$ENV_FILE" down
         print_info "Application stopped!"
         ;;
 
     restart)
         print_info "Restarting application..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" restart
+        docker compose $COMPOSE --env-file "$ENV_FILE" restart
         print_info "Application restarted!"
         ;;
 
     logs)
         print_info "Showing logs..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" logs -f
+        docker compose $COMPOSE --env-file "$ENV_FILE" logs -f
         ;;
 
     clean)
         print_info "Cleaning up..."
-        docker-compose $COMPOSE --env-file "$ENV_FILE" down -v
+        docker compose $COMPOSE --env-file "$ENV_FILE" down -v
         print_info "Cleanup completed!"
         ;;
 

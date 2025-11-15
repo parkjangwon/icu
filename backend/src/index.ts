@@ -846,6 +846,18 @@ app.get('/healthz', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
 });
 
+// Helpful landing message in development (avoid "Cannot GET /")
+if (config.nodeEnv !== 'production') {
+    app.get('/', (_req: Request, res: Response) => {
+        res.status(200).send(
+            'ICU is running in development mode.<br/>' +
+            'Open <a href="http://localhost:5173">http://localhost:5173</a> for the frontend (Vite).<br/>' +
+            'API base: <a href="http://localhost:3000">http://localhost:3000</a><br/>' +
+            'Health check: <a href="http://localhost:3000/healthz">/healthz</a>'
+        );
+    });
+}
+
 // Serve frontend build in production
 if (config.nodeEnv === 'production') {
     const distDir = path.resolve(__dirname, '../../frontend/dist');

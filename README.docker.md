@@ -1,37 +1,39 @@
-# ICU Docker 배포 가이드
+# ICU Docker Guide
 
-본 문서는 개발자 PC 및 원격 서버에서 이 프로젝트를 Docker로 실행/배포하는 전 과정을 상세히 안내합니다.
+[한국어 버전 (Korean Version)](README.docker.ko.md)
 
-## 구성 개요
+This document explains how to develop and deploy this project with Docker. English is the default. A Korean version of the general project README is available in `README.ko.md`.
 
-- 단일 컨테이너에 프론트엔드(Vue, Vite) + 백엔드(Express) 통합
-- 프로덕션: Express 단일 프로세스가 정적 파일과 API를 함께 서빙 (컨테이너 3000 → 호스트 `${HOST_PORT:-8080}`)
-- 개발: 백엔드 3000, 프론트엔드 5173 핫리로드
-- 컨테이너 로그: stdout/stderr (호스트 로그 볼륨 사용 안 함)
-- 환경 분리: `docker/.env.production`, `docker/.env.development`
-- 편의 스크립트: `docker/build.sh`로 build/up/down/logs/clean 일괄 관리
-- Cloudflare 앞단 구성 가능: 단일 포트로 전체 앱 제공 (원본은 컨테이너 포트 3000)
+## Overview
 
-## 디렉토리 구조
+- Single container: frontend (Vue + Vite) and backend (Express) together
+- Production: Express serves both API and static frontend (container 3000 → host `${HOST_PORT:-8080}`)
+- Development: backend 3000 and frontend 5173 with hot reload
+- Logs: standard container stdout/stderr (no host log volume)
+- Environment split: `docker/.env.production`, `docker/.env.development`
+- Helper script: `docker/build.sh` to manage build/up/down/logs/clean
+- No Nginx in the container. Use Cloudflare or any external reverse proxy if needed.
+
+## Layout
 
 - `docker/`
-  - `Dockerfile` (멀티 스테이지: FE 빌드 → BE 빌드 → 프로덕션/개발 런타임)
-  - `docker-compose.yml` (공통: 프로덕션 기본값, 컨테이너 포트 3000, 빌드 컨텍스트는 프로젝트 루트)
-  - `docker-compose.dev.yml` (개발용 오버라이드: 3000/5173 포트 노출, 소스 바인드)
-  - `build.sh` (docker/ 내부에 위치하는 실행 스크립트)
-  - `.env.production.example`, `.env.development.example` (예시 값)
+  - `Dockerfile` (multi-stage: build FE → build BE → production/development runtime)
+  - `docker-compose.yml` (base: production defaults, container port 3000, build context is project root)
+  - `docker-compose.dev.yml` (dev overrides: expose 3000/5173, bind source)
+  - `build.sh` (lives inside docker/)
+  - `.env.production.example`, `.env.development.example`
 
-주의: `.dockerignore`는 Docker “빌드 컨텍스트 루트(프로젝트 루트)”에 있어야 동작하므로 예외적으로 루트에 유지됩니다.
+Note: `.dockerignore` must stay at the repository root because the Compose build context is the project root. Docker only honors `.dockerignore` at the context root.
 
-## 사전 요구사항
+## Prerequisites
 
 - Docker 20.10+
-- Docker Compose 1.29+ (또는 호환 버전)
-- (원격 배포 시) 서버 포트 방화벽/보안그룹 오픈 (기본 8080)
+- Docker Compose v2 (i.e., `docker compose`, typically Docker Desktop or recent Docker Engine)
+- For remote servers, open the host port you set via `HOST_PORT` (default 8080)
 
-## 1) 환경 변수 준비 (docker/ 내부에서 관리)
+## 1) Prepare environment files (inside docker/)
 
-프로덕션/개발 각각 예시 파일을 복사해 사용합니다.
+Copy example files and edit values.
 
 ```
 cd docker
@@ -39,117 +41,117 @@ cp .env.production.example .env.production
 cp .env.development.example .env.development
 ```
 
-필수 항목
+Required:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-선택 항목
-- `HOST_PORT` (기본 8080)
+Optional:
+- `HOST_PORT` (default 8080)
 - `IMAGE_TAG`, `BUILD_TARGET`, `HEALTH_CHECK_*`
 
-## 2) 빠른 시작 — 개발 모드
+## 2) Quick start — Development
 
-개발에 최적화된 핫리로드(백엔드 3000, 프론트엔드 5173)를 사용합니다.
+Hot reload for both backend (3000) and frontend (5173).
 
 ```
 cd docker
-# 최초 1회 빌드 (development 타깃)
+# Build image for development target (first time)
 ./build.sh development build
 
-# 컨테이너 실행
+# Start containers
 ./build.sh development up
 
-# 로그 보기
+# Tail logs
 ./build.sh development logs
 ```
 
-- 접근:
-  - 프론트엔드: http://localhost:5173
-  - 백엔드 API: http://localhost:3000
-- 소스 변경사항은 컨테이너 내부로 바로 반영됩니다(`:ro`로 마운트되어 있어 안전하게 읽기 전용).
+Access:
+- Frontend: http://localhost:5173
+- API: http://localhost:3000
 
-중지/정리:
+Source changes are reflected via read-only bind mounts.
+
+Stop/clean:
 ```
 cd docker
 ./build.sh development down
-./build.sh development clean   # 볼륨/로그 포함 정리
+./build.sh development clean  # also removes volumes
 ```
 
-직접 docker-compose로 실행하려면:
-```
-cd docker
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.development up -d --build
-```
-
-## 3) 빠른 시작 — 프로덕션 모드 (로컬 또는 서버)
-
-Express가 정적 파일과 API를 모두 서빙합니다. 호스트에서는 기본 8080 포트로 접근(호스트 8080 → 컨테이너 3000 매핑)합니다.
-
+Run Compose directly (optional):
 ```
 cd docker
-# 빌드
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.development up -d --build
+```
+
+## 3) Quick start — Production (local or server)
+
+Express serves API and static frontend. Host defaults to port 8080 (host 8080 → container 3000).
+
+```
+cd docker
+# Build
 ./build.sh production build
 
-# 실행
+# Run
 ./build.sh production up
 
-# 로그 팔로우
+# Logs
 ./build.sh production logs
 ```
 
-- 접근: http://localhost:${HOST_PORT:-8080}
-- 로그: `docker logs icu-app` 등 표준 Docker 로그를 사용합니다.
+Access: http://localhost:${HOST_PORT:-8080}
 
-중지/정리:
+Stop/clean:
 ```
 cd docker
 ./build.sh production down
 ./build.sh production clean
 ```
 
-직접 docker-compose로 실행하려면:
+Run Compose directly (optional):
 ```
 cd docker
-docker-compose -f docker-compose.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.yml --env-file .env.production up -d --build
 ```
 
-## 4) 원격 서버에 배포하기 (A→Z)
+## 4) Remote deployment (A→Z)
 
-전제: 서버에 Docker/Compose 설치, 8080 포트 오픈.
+Assumptions: Docker/Compose installed on the server; firewall allows the chosen `HOST_PORT` (default 8080).
 
-1. 프로젝트 배포
-   - 옵션 A) Git으로 서버에 클론
+1. Get the project onto the server
+   - Option A) Clone from Git
      ```
      git clone https://github.com/parkjangwon/icu.git && cd icu
      ```
-   - 옵션 B) 로컬에서 압축 업로드
+   - Option B) Upload a tarball
      ```
      tar czf icu.tar.gz icu && scp icu.tar.gz <user>@<server>:/srv/
      ssh <user>@<server>
      cd /srv && tar xzf icu.tar.gz && cd icu
      ```
-2. 환경 파일 준비
+2. Prepare env
    ```
    cd docker
    cp .env.production.example .env.production
-   vi .env.production  # Supabase 키/URL, HOST_PORT 등 설정
+   vi .env.production  # set Supabase keys/URL, HOST_PORT, etc.
    ```
-3. 빌드 및 실행
+3. Build and run
    ```
    ./build.sh production build
    ./build.sh production up
    ```
-4. 서비스 확인
-   - 브라우저: http://<서버IP 또는 도메인>:<HOST_PORT>
-   - 서버에서 로그 확인:
+4. Verify
+   - Browser: http://<host-or-domain>:<HOST_PORT>
+   - Logs:
      ```
      ./build.sh production logs
      ```
-5. 자동 재시작
-  - `docker/docker-compose.yml`은 `restart: unless-stopped` 설정을 사용합니다. 서버 재부팅 후 자동 기동됩니다.
+5. Auto restart
+   - `docker/docker-compose.yml` uses `restart: unless-stopped` so the container comes back after reboots.
 
-업데이트 배포:
+Roll out updates:
 ```
 git pull
 cd docker
@@ -157,36 +159,36 @@ cd docker
 ./build.sh production up
 ```
 
-## 5) Cloudflare 연동 가이드 (옵션)
+## 5) Cloudflare integration (optional)
 
-도메인을 Cloudflare에 연결하여 HTTPS를 제공하고, 원격 서버는 8080 HTTP만 노출해도 됩니다.
+Terminate TLS at Cloudflare and keep the origin app on plain HTTP. Your server only needs to expose `HOST_PORT` (default 8080).
 
-1. Cloudflare DNS에서 도메인 A 레코드 추가 (프록시 On, 주황 구름)
-2. SSL/TLS 모드 선택
-   - 간편: Flexible (원본 서버는 HTTP, 기본 HOST_PORT=8080 → 컨테이너 3000)
-   - 보안 강화: Full(Strict) 사용 시, 원본 서버(호스트 레벨 프록시 또는 직접 앱)에 TLS 구성 필요. 컨테이너 내부 Nginx는 사용하지 않습니다.
-3. 네트워크/보안 설정은 기본값으로 시작하고, 트래픽/봇/방화벽 정책은 필요 시 조정
+1. Add an A record in Cloudflare DNS (orange cloud = proxied)
+2. SSL/TLS mode
+   - Simple: Flexible (origin is HTTP: host 8080 → container 3000)
+   - Stricter: Full (Strict) requires TLS at the origin (via a host-level proxy or app TLS). The container itself does not include Nginx.
+3. Start with defaults for security settings; adjust bot/firewall rules as needed.
 
-원본 포트 변경: `docker/.env.production`의 `HOST_PORT`로 포트를 조정하세요. Cloudflare는 80/443에서 받아 원본(예: 8080)으로 프록시합니다.
+Change origin port via `HOST_PORT` in `docker/.env.production`. Cloudflare listens on 80/443 and proxies to your origin port.
 
-## 6) 명령어 치트시트
+## 6) Command cheat sheet
 
-빌드/실행/중지/로그
+Wrapper script:
 ```
 cd docker
 ./build.sh <environment> <action>
 
 environment: production | development
 action:
-  build   # 이미지 빌드
-  up      # 컨테이너 시작 (-d)
-  down    # 컨테이너 중지
-  restart # 재시작
-  logs    # 로그 팔로우
-  clean   # 중지 + 볼륨 삭제
+  build    # build image
+  up       # start (-d)
+  down     # stop
+  restart  # restart
+  logs     # follow logs
+  clean    # remove containers and volumes
 ```
 
-예시:
+Examples:
 ```
 cd docker
 ./build.sh production build
@@ -194,27 +196,35 @@ cd docker
 ./build.sh development up
 ```
 
-docker-compose 직접 사용:
+Run Docker Compose directly (optional):
 ```
-# 프로덕션
 cd docker
-docker-compose -f docker-compose.yml --env-file .env.production up -d --build
+# Production
+docker compose -f docker-compose.yml --env-file .env.production up -d --build
 
-# 개발
-cd docker
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.development up -d --build
+# Development
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.development up -d --build
 ```
 
-## 7) 트러블슈팅
+## 7) Troubleshooting
 
-- 포트 충돌(이미 사용 중)
-  - 오류: "Bind for 0.0.0.0:8080 failed: port is already allocated"
-  - 해결: `.env.*`의 `HOST_PORT`를 변경하거나 기존 프로세스/컨테이너를 중지
-- 환경 변수 누락
-  - Supabase 키/URL 미설정 시 백엔드에서 401/500 발생 가능. `.env.*` 재확인
-- 빌드 캐시 문제
-  - `docker builder prune` 또는 `--no-cache`로 재빌드 시도
-- 권한 문제(호스트 파일/디렉토리)
-  - 개발 모드 바인드 마운트 시 호스트 권한 문제를 확인하세요.
-- 헬스체크 실패
-  - 백엔드가 초기화되기 전에 체크가 수행될 수 있음. 잠시 후 재확인
+- Hitting http://localhost:8080 during development shows "Cannot GET /"
+  - Development exposes only 5173 (FE) and 3000 (API). 8080 is for production.
+- Port already in use
+  - Error: "Bind for 0.0.0.0:8080 failed: port is already allocated"
+  - Change `HOST_PORT` in your `.env.*` or stop the conflicting process/container.
+- Missing environment variables
+  - Supabase URL/keys are required by the backend. Double-check `.env.*`.
+- Build cache issues
+  - Try `docker builder prune` or rebuild with `--no-cache`.
+- File permission issues with bind mounts (development)
+  - Ensure your host user can read the project files.
+- Healthcheck flapping on startup
+  - The app may need a few seconds to initialize; the healthcheck will pass shortly.
+
+## Notes
+
+- All Docker assets live under `docker/`. You can run the helper script from anywhere: `./docker/build.sh ...`.
+- `.dockerignore` stays at the repository root to correctly scope the build context.
+- Convenience npm scripts are available as wrappers if you prefer running from the project root:
+  - `npm run docker:dev:up`, `npm run docker:dev:down`, `npm run docker:prod:up`, etc. These call `docker/build.sh` under the hood.

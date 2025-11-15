@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      target: development
+    ports:
+      - "3000:3000"   # Backend (Express)
+      - "5173:5173"   # Frontend (Vite)
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "true"]
+    volumes:
+      # Bind-mount only source directories for hot reload
+      - ../backend/src:/app/backend/src:ro
+      - ../frontend/src:/app/frontend/src:ro
