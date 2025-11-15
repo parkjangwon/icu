@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSupabaseClient } from '@/composables/useSupabaseClient';
@@ -53,7 +53,7 @@ const registerUrl = async () => {
     if (response.data.unique_id) {
       resultUniqueId.value = response.data.unique_id;
       setTimeout(() => {
-        router.push(`/${resultUniqueId.value}`);
+        router.push({ name: 'monitor', params: { uniqueId: resultUniqueId.value } });
       }, 800);
     }
   } catch (error: any) {
@@ -65,19 +65,19 @@ const registerUrl = async () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
-    <div style="width: 400px; max-width: 100%;">
-      <div class="text-center mb-10">
-        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3">
+  <div class="max-w-4xl mx-auto flex items-center justify-center w-full" style="min-height: 70vh;">
+    <div class="w-full mx-auto px-4" style="max-width: 250px;">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-black mb-2">
           ICU
         </h1>
-        <p class="text-lg text-gray-600 dark:text-gray-300">
+        <p class="text-base sm:text-lg text-gray-600">
           Start monitoring your website
         </p>
       </div>
 
-      <Card class="shadow-xl">
-        <CardContent class="px-8 py-10">
+      <Card class="shadow-lg border-gray-200">
+        <CardContent class="px-6 sm:px-8 py-10">
           <form @submit.prevent="registerUrl" class="space-y-6">
             <div>
               <Input
@@ -86,26 +86,23 @@ const registerUrl = async () => {
                 type="url"
                 placeholder="https://example.com"
                 :disabled="isLoading"
-                style="height: 44px; font-size: 15px;"
+                class="h-12 text-base"
               />
             </div>
 
             <Button
               type="submit"
               :disabled="isLoading || !targetUrl"
-              class="w-full text-base font-semibold"
-              style="height: 44px;"
+              class="w-full h-12 text-base font-semibold"
             >
               {{ isLoading ? 'Setting up...' : 'Start Monitoring' }}
             </Button>
 
-            <!-- Error Message -->
-            <p v-if="errorMessage" class="text-sm text-red-600 dark:text-red-400 text-center">
+            <p v-if="errorMessage" class="text-sm text-red-600 text-center">
               {{ errorMessage }}
             </p>
 
-            <!-- Success Message -->
-            <p v-if="resultUniqueId" class="text-sm text-green-600 dark:text-green-400 text-center">
+            <p v-if="resultUniqueId" class="text-sm text-green-600 text-center">
               ✓ Success! Redirecting...
             </p>
           </form>
