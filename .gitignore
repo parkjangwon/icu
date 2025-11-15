@@ -77,6 +77,11 @@ frontend/.env.production.local
 !frontend/.env.example
 !**/*.env.example
 
+# --- Docker directory (do not commit secrets) ---
+docker/.env
+docker/.env.*
+!docker/.env.*.example
+
 # --- Database / local data ---
 *.sqlite
 *.sqlite3

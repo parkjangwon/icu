@@ -2,6 +2,7 @@
 
 // This must be the first import to ensure environment variables are loaded
 import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -839,10 +840,21 @@ const runAllHealthChecks = async () => {
 };
 
 
-// --- Server Initialization ---
-app.get('/', (req: Request, res: Response) => {
-    res.send(`ICU Backend is running in ${config.nodeEnv} mode.`);
+// --- Server Initialization & Health ---
+// Liveness/Readiness probe
+app.get('/healthz', (_req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
 });
+
+// Serve frontend build in production
+if (config.nodeEnv === 'production') {
+    const distDir = path.resolve(__dirname, '../../frontend/dist');
+    app.use(express.static(distDir));
+    // SPA fallback for non-API routes
+    app.get(/^(?!\/api).*/, (_req: Request, res: Response) => {
+        res.sendFile(path.join(distDir, 'index.html'));
+    });
+}
 
 app.listen(config.serverPort, () => {
     console.log(`Server is running at http://localhost:${config.serverPort} in ${config.nodeEnv} mode`);

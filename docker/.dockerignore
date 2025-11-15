@@ -1,0 +1,50 @@
+# Git
+.git
+../.gitignore
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+backend/dist
+frontend/dist
+
+# Environment files
+.env
+.env.*
+!.env.*.example
+# Environment files under docker/
+docker/.env
+docker/.env.*
+!docker/.env.*.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Development
+backend/.env.development
+frontend/.env.development
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+*.md
+!README.md
