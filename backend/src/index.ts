@@ -96,12 +96,18 @@ app.get('/api/urls', authenticate, async (req: Request, res: Response) => {
 
         if (error) throw error;
         
-        const enrichedUrls = (urls || []).map(url => {
-            const lastCheckFromHistory = healthHistoryCache.get(url.id)?.[0];
+        const enrichedUrls = (urls || []).map(dbUrl => {
+            const history = healthHistoryCache.get(dbUrl.id) || [];
+            const lastCheckFromHistory = history[0];
+
+            const last_check_status = lastCheckFromHistory ? (lastCheckFromHistory.isSuccess ? 'UP' : 'DOWN') : dbUrl.last_check_status;
+            const last_check_time = lastCheckFromHistory?.checkTime ?? dbUrl.last_check_time;
+
             return {
-                ...url,
-                last_is_up: lastCheckFromHistory?.isSuccess ?? (url.last_check_status === 'UP'),
-                last_checked_at: lastCheckFromHistory?.checkTime ?? url.last_check_time,
+                ...dbUrl,
+                last_check_status: last_check_status,
+                last_is_up: last_check_status === 'UP',
+                last_checked_at: last_check_time,
             };
         });
 
@@ -129,7 +135,17 @@ app.get('/api/monitor/:uniqueId', authenticate, async (req: Request, res: Respon
         }
 
         const history = healthHistoryCache.get(urlData.id) || [];
-        res.status(200).json({ ...urlData, health_checks: history });
+        const lastCheckFromHistory = history[0];
+
+        const live_last_check_status = lastCheckFromHistory ? (lastCheckFromHistory.isSuccess ? 'UP' : 'DOWN') : urlData.last_check_status;
+        const live_last_check_time = lastCheckFromHistory?.checkTime ?? urlData.last_check_time;
+
+        res.status(200).json({ 
+            ...urlData, 
+            health_checks: history,
+            last_check_status: live_last_check_status,
+            last_check_time: live_last_check_time,
+        });
     } catch (error) {
         console.error(`Error in /api/monitor/${uniqueId}:`, error);
         res.status(500).json({ error: 'An unexpected error occurred.' });
@@ -248,7 +264,6 @@ app.post('/api/notification-preferences', authenticate, async (req, res) => {
     res.status(200).json(data);
 });
 
-// Other notification endpoints like upsert, delete, test would follow a similar DB-based pattern...
 app.post('/api/notification-settings/upsert', authenticate, async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'User not authenticated.' });
@@ -334,50 +349,49 @@ const runAllHealthChecks = async () => {
     const results = await Promise.all(checkPromises);
 
     const checkTime = new Date().toISOString();
-    const urlUpdatesForDb: any[] = [];
     const urlsThatWentDown: any[] = [];
+    const urlsToDeactivate: string[] = [];
 
     for (let i = 0; i < urlsToCheck.length; i++) {
         const url = urlsToCheck[i];
         const result = results[i];
         const newStatus = result.isSuccess ? 'UP' : 'DOWN';
+        const oldStatus = url.last_check_status;
 
         const history = healthHistoryCache.get(url.id) || [];
         history.unshift({ ...result, checkTime });
         healthHistoryCache.set(url.id, history.slice(0, 10));
 
-        if (newStatus !== url.last_check_status) {
-            console.log(`Status change for ${url.target_url}: ${url.last_check_status} -> ${newStatus}`);
-            url.last_check_status = newStatus;
+        url.last_check_time = checkTime;
+        url.last_check_status = newStatus;
 
-            urlUpdatesForDb.push({
-                id: url.id,
-                last_check_status: newStatus,
-                last_check_time: checkTime,
-                last_status_change_time: checkTime,
-            });
-
+        if (newStatus !== oldStatus) {
+            console.log(`Status change for ${url.target_url}: ${oldStatus} -> ${newStatus}`);
+            url.last_status_change_time = checkTime;
             if (newStatus === 'DOWN') {
                 urlsThatWentDown.push(url);
             }
         }
+
+        if (url.is_active && history.length >= 3 && history.slice(0, 3).every(r => !r.isSuccess)) {
+            console.log(`URL ${url.target_url} has been down for 3 consecutive checks. Deactivating.`);
+            urlsToDeactivate.push(url.id);
+            url.is_active = false;
+        }
     }
 
-    // --- DB Operations ---
-    if (urlUpdatesForDb.length > 0) {
-        console.log(`Updating ${urlUpdatesForDb.length} URL statuses in DB.`);
-        const updatePromises = urlUpdatesForDb.map(u => {
-            const { id, ...updateData } = u;
-            return supabaseServiceRole.from('monitored_urls').update(updateData).eq('id', id);
-        });
-        await Promise.all(updatePromises).catch(err => console.error("Error batch updating URL statuses:", err));
+    if (urlsToDeactivate.length > 0) {
+        console.log(`Deactivating ${urlsToDeactivate.length} URLs in DB.`);
+        const uniqueUrlsToDeactivate = [...new Set(urlsToDeactivate)];
+        const deactivatePromises = uniqueUrlsToDeactivate.map(id =>
+            supabaseServiceRole.from('monitored_urls').update({ is_active: false }).eq('id', id)
+        );
+        await Promise.all(deactivatePromises).catch(err => console.error("Error deactivating URLs:", err));
     }
 
-    // --- Notification Logic (with DB lookups) ---
     if (urlsThatWentDown.length > 0) {
         const userIds = [...new Set(urlsThatWentDown.map(u => u.user_id))];
         
-        // Fetch settings for all affected users in batches
         const { data: prefs } = await supabaseServiceRole.from('notification_preferences').select('*').in('user_id', userIds);
         const { data: settings } = await supabaseServiceRole.from('notification_settings').select('*').in('user_id', userIds);
 
