@@ -3,7 +3,7 @@ import { computed, defineProps } from 'vue';
 import { Card, CardContent } from '@/components/ui/card';
 
 const props = defineProps<{
-  healthChecks: Array<{ is_success: boolean, check_time: string }>;
+  healthChecks: Array<{ isSuccess: boolean, checkTime: string }>;
 }>();
 
 const latestCheck = computed(() => {
@@ -15,14 +15,14 @@ const latestCheck = computed(() => {
 
 const status = computed(() => {
   if (!latestCheck.value) return { text: 'Unknown' };
-  return latestCheck.value.is_success
+  return latestCheck.value.isSuccess
     ? { text: 'UP' }
     : { text: 'DOWN' };
 });
 
 const lastChecked = computed(() => {
   if (!latestCheck.value) return 'N/A';
-  const date = new Date(latestCheck.value.check_time);
+  const date = new Date(latestCheck.value.checkTime);
   return date.toLocaleString();
 });
 </script>
