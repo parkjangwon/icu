@@ -249,6 +249,79 @@ app.post('/api/notification-preferences', authenticate, async (req, res) => {
 });
 
 // Other notification endpoints like upsert, delete, test would follow a similar DB-based pattern...
+app.post('/api/notification-settings/upsert', authenticate, async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'User not authenticated.' });
+
+    const { provider, is_enabled, config } = req.body;
+    if (!provider || typeof is_enabled !== 'boolean' || !config) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+
+    try {
+        const { data, error } = await supabaseServiceRole
+            .from('notification_settings')
+            .upsert({
+                user_id: userId,
+                provider,
+                is_enabled,
+                config,
+            }, { onConflict: 'user_id, provider' })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error in /api/notification-settings/upsert:', error);
+        res.status(500).json({ error: 'Failed to save settings.' });
+    }
+});
+
+app.post('/api/notification-settings/test', authenticate, async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'User not authenticated.' });
+
+    const { provider } = req.body;
+    if (!provider) {
+        return res.status(400).json({ error: 'Provider is required.' });
+    }
+
+    try {
+        const { data: setting, error } = await supabaseServiceRole
+            .from('notification_settings')
+            .select('config')
+            .eq('user_id', userId)
+            .eq('provider', provider)
+            .single();
+
+        if (error || !setting) {
+            return res.status(404).json({ error: 'Settings not found for this provider.' });
+        }
+
+        const message = buildTestMessage();
+        let promise;
+        switch (provider) {
+            case 'telegram':
+                promise = sendTelegram({ botToken: setting.config.bot_token, chatId: setting.config.chat_id, message });
+                break;
+            case 'slack':
+                promise = sendSlack({ webhookUrl: setting.config.webhook_url, message });
+                break;
+            case 'discord':
+                promise = sendDiscord({ webhookUrl: setting.config.webhook_url, message });
+                break;
+            default:
+                return res.status(400).json({ error: 'Unsupported provider.' });
+        }
+
+        await promise;
+        res.status(200).json({ message: 'Test notification sent.' });
+    } catch (error) {
+        console.error(`Error in /api/notification-settings/test for ${provider}:`, error);
+        res.status(500).json({ error: 'Failed to send test notification.' });
+    }
+});
 
 // --- Health Check Scheduler ---
 
