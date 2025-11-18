@@ -28,8 +28,8 @@ ChartJS.register(
 );
 
 interface HealthCheck {
-  check_time: string;
-  response_time_ms: number | null;
+  checkTime: string;
+  responseTimeMs: number | null;
 }
 
 const props = defineProps<{
@@ -37,8 +37,8 @@ const props = defineProps<{
 }>();
 
 const chartData = computed(() => {
-  const labels = (props.healthChecks || []).map(check => new Date(check.check_time).toLocaleTimeString()).reverse();
-  const data = (props.healthChecks || []).map(check => check.response_time_ms).reverse();
+  const labels = (props.healthChecks || []).map(check => new Date(check.checkTime).toLocaleTimeString()).reverse();
+  const data = (props.healthChecks || []).map(check => check.responseTimeMs).reverse();
   
   return {
     labels,

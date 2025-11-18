@@ -3,11 +3,12 @@ import * as dns from 'dns';
 import { Agent, Dispatcher } from 'undici';
 import { LookupFunction } from 'net';
 
-interface HealthCheckResult {
+export interface HealthCheckResult {
     statusCode: number | null;
     responseTimeMs: number | null;
     isSuccess: boolean;
     error?: string;
+    checkTime?: string; // Added to be compatible with history cache
     // optional extra diagnostics for network/TLS errors
     errorDetails?: {
         name?: string;

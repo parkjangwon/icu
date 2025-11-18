@@ -15,21 +15,8 @@ CREATE TABLE public.monitored_urls (
 -- unique_id에 대한 인덱스 생성
 CREATE INDEX idx_monitored_urls_unique_id ON public.monitored_urls USING btree (unique_id);
 
--- health_checks 테이블 생성
-CREATE TABLE public.health_checks (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    monitored_url_id uuid NOT NULL,
-    status_code integer NULL,
-    response_time_ms integer NULL,
-    check_time timestamp with time zone NOT NULL DEFAULT now(),
-    is_success boolean NOT NULL,
-    CONSTRAINT health_checks_pkey PRIMARY KEY (id),
-    CONSTRAINT health_checks_monitored_url_id_fkey FOREIGN KEY (monitored_url_id) REFERENCES public.monitored_urls(id) ON DELETE CASCADE
-);
-
 -- RLS (Row Level Security) 활성화
 ALTER TABLE public.monitored_urls ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_checks ENABLE ROW LEVEL SECURITY;
 
 -- RLS 정책 생성
 
@@ -57,24 +44,6 @@ CREATE POLICY "Allow authenticated users to delete their own urls"
 ON public.monitored_urls
 FOR DELETE
 USING (auth.uid() = user_id);
-
--- health_checks: 누구나 health_checks를 생성(INSERT)할 수 있습니다. (서버 로직에서 사용)
-CREATE POLICY "Allow public insert for server"
-ON public.health_checks
-FOR INSERT
-WITH CHECK (true);
-
--- health_checks: 연결된 monitored_url 레코드를 볼 수 있는 사람은 누구나 health_checks를 읽을(SELECT) 수 있습니다.
-CREATE POLICY "Allow authenticated users to read health checks for their own urls"
-ON public.health_checks
-FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1
-    FROM public.monitored_urls mu
-    WHERE mu.id = monitored_url_id AND mu.user_id = auth.uid()
-  )
-);
 
 -- 전역 알림 설정: 사용자 단위의 알림 프로바이더 설정 테이블
 -- 각 사용자는 telegram/slack/discord 각각에 대해 설정을 보유할 수 있습니다.
@@ -139,3 +108,15 @@ ON public.notification_preferences
 FOR ALL
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE public.monitored_urls
+    ADD COLUMN last_check_status TEXT, -- 'UP', 'DOWN' 등 상태 저장
+ADD COLUMN last_check_time TIMESTAMPTZ,
+ADD COLUMN last_status_change_time TIMESTAMPTZ;
+
+-- 옵션: 초기 데이터 채우기 (기존 URL들은 'UP'으로 가정)
+UPDATE public.monitored_urls
+SET last_check_status = 'UP',
+    last_check_time = NOW(),
+    last_status_change_time = NOW()
+WHERE last_check_status IS NULL;
