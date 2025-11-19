@@ -21,7 +21,7 @@ Google SSO(Supabase Auth)를 통한 인증이 필요합니다.
   - 저장하지 않아도 현재 선택/입력값으로 바로 전송해보는 "Send Test" 버튼
   - 채널 공통 메시지 포맷 적용
 - URL 등록 검증: 최초 등록 시 실제 네트워크 접속을 1회 수행하여 도달 불가능한 URL은 등록을 거절합니다. 실패 시 영문 메시지로 응답합니다: "Unable to connect to the specified URL. Please ensure the URL is up and running."
-- 이력 보관 정책: 각 URL당 최근 10개의 헬스 체크 결과만 보관하여 DB 부하를 줄입니다.
+- 헬스 체크 이력: 각 URL당 최근 10개의 헬스 체크 결과는 데이터베이스가 아닌 메모리에 저장됩니다.
 - 계정별 등록 제한: 계정당 최대 5개의 URL만 등록할 수 있습니다.
 - URL 목록 자동 새로고침: URL 리스트 화면이 10초마다 자동으로 새로고침됩니다.
 - 헬스체크 TLS 주의: 서버-서버 헬스체크 요청은 호환성 강화를 위해 TLS 인증서 검증을 건너뜁니다(rejectUnauthorized=false). 최종 사용자 브라우저 트래픽에는 영향을 주지 않습니다.
@@ -30,7 +30,7 @@ Google SSO(Supabase Auth)를 통한 인증이 필요합니다.
 
 - **백엔드**: Node.js, Express, TypeScript
 - **프론트엔드**: Vue.js 3, Vite, TypeScript, Tailwind CSS
-- **데이터베이스**: Supabase (PostgreSQL) - 데이터 저장 및 실시간 기능에 사용됩니다.
+- **데이터베이스**: Supabase (PostgreSQL) - 사용자 및 URL 설정 정보 저장용. 헬스 체크 이력은 메모리에 저장됩니다.
 
 ## 🚀 시작하기
 
@@ -44,7 +44,7 @@ Google SSO(Supabase Auth)를 통한 인증이 필요합니다.
 
 1.  Supabase 대시보드에서 새 프로젝트를 생성합니다.
 2.  **SQL Editor** 메뉴로 이동합니다.
-3.  `backend/supabase/schema.sql` 파일의 전체 내용을 복사하여 실행합니다. 이를 통해 필요한 테이블(`monitored_urls`, `health_checks`)과 행 수준 보안(RLS) 정책이 생성됩니다.
+3.  `backend/supabase/schema.sql` 파일의 전체 내용을 복사하여 실행합니다. 이를 통해 필요한 테이블(예: `monitored_urls`)과 행 수준 보안(RLS) 정책이 생성됩니다.
 
 ### 2. 백엔드 설정
 
@@ -129,7 +129,7 @@ Deprecated(더 이상 사용하지 않음):
 
 메모
 - 서버 스케줄러가 주기적으로 모든 활성 URL을 검사합니다.
-- 검사 저장 후 보존 작업을 통해 URL당 최근 10개의 결과만 유지합니다.
+- 서버는 URL당 최근 10개의 헬스 체크 결과를 메모리에 저장합니다.
 
 ## 🔔 알림
 

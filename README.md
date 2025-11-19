@@ -21,7 +21,7 @@ Authentication is required (Google SSO via Supabase Auth).
   - "Send Test" button to verify the currently selected provider without saving
   - Unified message format
 - URL registration validation: On first registration, ICU performs a real network check and rejects unreachable URLs with an English message: "Unable to connect to the specified URL. Please ensure the URL is up and running."
-- URL retention policy: For each URL, only the latest 10 health check results are kept to reduce DB load.
+- Health Check History: For each URL, the latest 10 health check results are stored in memory (not in the database).
 - Per-account limit: You can register up to 5 URLs per account.
 -- URL List auto-refresh: The URL list page refreshes every 10 seconds.
 -- Health-check TLS note: Server-side health checks intentionally skip TLS certificate verification (rejectUnauthorized=false) by design to improve compatibility behind CDNs/WAFs. This only affects server-to-server checks.
@@ -30,7 +30,7 @@ Authentication is required (Google SSO via Supabase Auth).
 
 - **Backend**: Node.js, Express, TypeScript
 - **Frontend**: Vue.js 3, Vite, TypeScript, Tailwind CSS
-- **Database**: Supabase (PostgreSQL) for data storage and real-time capabilities.
+- **Database**: Supabase (PostgreSQL) for user and URL configuration. Health check history is stored in memory.
 
 ## 🚀 Getting Started
 
@@ -44,7 +44,7 @@ Authentication is required (Google SSO via Supabase Auth).
 
 1.  Create a new project in your Supabase dashboard.
 2.  Go to the **SQL Editor**.
-3.  Copy the entire content of `backend/supabase/schema.sql` and run it to create the necessary tables (`monitored_urls`, `health_checks`) and row-level security policies.
+3.  Copy the entire content of `backend/supabase/schema.sql` and run it to create the necessary tables (e.g., `monitored_urls`) and row-level security policies.
 
 ### 2. Backend Setup
 
@@ -129,7 +129,7 @@ Deprecated (removed UI/usage):
 
 Notes
 - Scheduler runs periodically on the server to check all active URLs.
-- After each insert, retention cleanup keeps only the latest 10 results per URL.
+- The server stores the latest 10 health check results per URL in memory.
 
 ## 🔔 Notifications
 
